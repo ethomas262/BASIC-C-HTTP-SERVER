@@ -1,0 +1,159 @@
+HTTP/1.1 200 OK
+Content-Type: text/html
+Connection: close
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome, Elijah - CS Student</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background-color: #f8f8f8;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+
+        header {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        pre {
+            text-align: left;
+            background-color: #ecf0f1;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Welcome, Elijah - CS Student</h1>
+    </header>
+
+    <main>
+        <p>Hello there! I'm Elijah, a computer science student passionate about technology and problem-solving. Currently, I'm diving into the world of algorithms, programming languages, and software development.</p>
+        
+        <p>On this journey, I'm exploring various aspects of computer science, learning new technologies, and working on exciting projects. Feel free to connect with me and explore this incredible world of code together!</p>
+
+        <h2>HTTP Server Project Summary</h2>
+        <p>This project is a simple HTTP server implemented in C++ using Winsock. The server listens on the loopback address (127.0.0.1) and port 8080, accepts incoming client connections, reads a request from the client, and then sends a predefined HTTP response stored in the "response.http" file.</p>
+
+        <h3>Code</h3>
+        <pre>
+            #define _WINSOCK_DEPRECATED_NO_WARNINGS
+
+#pragma comment(lib, "ws2_32.lib")
+#include <iostream>
+#include <WinSock2.h>
+#include <string>
+#include <fstream>
+#include <sstream>
+
+using namespace std;
+
+int main() {
+    cout << "Attempting to create a server\n";
+    SOCKET wsocket;
+    SOCKET new_wsocket;
+    WSADATA wsaData;
+    struct sockaddr_in server;
+    int server_len;
+    int buffer_size = 30720;
+
+    // initialize
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        cerr << "Error: Failed to initialize server\n";
+        return 1;
+    }
+
+    // create a socket
+    wsocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (wsocket == INVALID_SOCKET) {
+        cerr << "Error: Failed to create socket\n";
+        WSACleanup();
+        return 1;
+    }
+
+    // bind socket to address
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    server.sin_port = htons(8080);
+    server_len = sizeof(server);
+    if (bind(wsocket, (SOCKADDR*)&server, server_len) != 0) {
+        cerr << "Error: Failed to bind socket\n";
+        closesocket(wsocket);
+        WSACleanup();
+        return 1;
+    }
+
+    if (listen(wsocket, SOMAXCONN) != 0) {
+        cerr << "Error: Could not start listening\n";
+        closesocket(wsocket);
+        WSACleanup();
+        return 1;
+    }
+
+    cout << "Listening on 127.0.0.1:8080\n";
+
+    int bytes = 0;
+    while (true) {
+        // accept client request
+        new_wsocket = accept(wsocket, (SOCKADDR*)&server, &server_len);
+        if (new_wsocket == INVALID_SOCKET) {
+            cerr << "Could not accept\n";
+            continue;
+        }
+
+        // read request
+        char buff[30720] = { 0 };
+        bytes = recv(new_wsocket, buff, buffer_size, 0);
+        if (bytes < 0) {
+            cerr << "Could not read client request\n";
+        }
+
+        ifstream in_file("response.http");
+        stringstream buffer;
+        buffer << in_file.rdbuf();
+        in_file.close();
+        string serverMessage = buffer.str();
+
+        int bytesSent = send(new_wsocket, serverMessage.c_str(), serverMessage.size(), 0);
+        if (bytesSent < 0) {
+            cerr << "Could not send response\n";
+        }
+
+        cout << "Sent response to client\n";
+        closesocket(new_wsocket);
+    }
+
+    closesocket(wsocket);
+    WSACleanup();
+
+    return 0;
+}
+        </pre>
+    </main>
+
+</body>
+</html>
