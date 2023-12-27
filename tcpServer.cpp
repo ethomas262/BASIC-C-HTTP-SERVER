@@ -11,6 +11,8 @@ using namespace std;
 
 int main() {
     cout << "Attempting to create a server\n";
+
+    // Declare variables for sockets and networking
     SOCKET wsocket;
     SOCKET new_wsocket;
     WSADATA wsaData;
@@ -18,13 +20,13 @@ int main() {
     int server_len;
     int buffer_size = 30720;
 
-    // initialize
+    // Initialize Winsock
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
         cerr << "Error: Failed to initialize server\n";
         return 1;
     }
 
-    // create a socket
+    // Create a socket
     wsocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (wsocket == INVALID_SOCKET) {
         cerr << "Error: Failed to create socket\n";
@@ -32,7 +34,7 @@ int main() {
         return 1;
     }
 
-    // bind socket to address
+    // Bind socket to address
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     server.sin_port = htons(8080);
@@ -44,6 +46,7 @@ int main() {
         return 1;
     }
 
+    // Start listening for incoming connections
     if (listen(wsocket, SOMAXCONN) != 0) {
         cerr << "Error: Could not start listening\n";
         closesocket(wsocket);
@@ -55,35 +58,40 @@ int main() {
 
     int bytes = 0;
     while (true) {
-        // accept client request
+        // Accept client request
         new_wsocket = accept(wsocket, (SOCKADDR*)&server, &server_len);
         if (new_wsocket == INVALID_SOCKET) {
             cerr << "Could not accept\n";
             continue;
         }
 
-        // read request
+        // Read request from client
         char buff[30720] = { 0 };
         bytes = recv(new_wsocket, buff, buffer_size, 0);
         if (bytes < 0) {
             cerr << "Could not read client request\n";
         }
 
+        // Read predefined HTTP response from file
         ifstream in_file("response.http");
         stringstream buffer;
         buffer << in_file.rdbuf();
         in_file.close();
         string serverMessage = buffer.str();
 
+        // Send the HTTP response to the client
         int bytesSent = send(new_wsocket, serverMessage.c_str(), serverMessage.size(), 0);
         if (bytesSent < 0) {
             cerr << "Could not send response\n";
         }
 
         cout << "Sent response to client\n";
+        
+        // Close the client socket
         closesocket(new_wsocket);
     }
 
+    // Close the server socket and clean up Winsock
     closesocket(wsocket);
     WSACleanup();
 
